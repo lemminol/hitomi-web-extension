@@ -64,6 +64,5 @@ jobs:
         run: |
           set -euo pipefail
           notes="Chromium: zip을 풀어 '압축해제된 확장 프로그램 로드'. Firefox: hitomi-web-firefox.xpi(서명됨)를 '파일에서 부가 기능 설치'. 자세한 설치법은 README."
-          test -f out/hitomi-web-firefox.xpi || notes="$notes
-(이 릴리스에는 서명된 Firefox xpi가 없습니다: 저장소 Secrets에 AMO_JWT_ISSUER / AMO_JWT_SECRET 을 넣으면 다음 릴리스부터 만들어집니다.)"
+          test -f out/hitomi-web-firefox.xpi || notes="$notes (이 릴리스에는 서명된 Firefox xpi가 없습니다: 저장소 Secrets에 AMO_JWT_ISSUER / AMO_JWT_SECRET 을 넣으면 다음 릴리스부터 만들어집니다.)"
           gh release create "v$VERSION" out/* --title "Hitomi Web 확장 $VERSION" --notes "$notes"
