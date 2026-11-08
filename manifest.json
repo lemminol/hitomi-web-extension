@@ -1,0 +1,30 @@
+{
+  "manifest_version": 3,
+  "name": "Hitomi Web",
+  "version": "1.0.3",
+  "description": "우클릭 메뉴로 주소를 Hitomi Web 서버에 등록합니다. X·YouTube·네이버는 로그인 쿠키도 함께 올립니다.",
+  "icons": {
+    "16": "icons/16.png",
+    "48": "icons/48.png",
+    "128": "icons/128.png"
+  },
+  "permissions": [
+    "contextMenus",
+    "storage",
+    "cookies",
+    "notifications"
+  ],
+  "optional_host_permissions": [
+    "*://*/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Hitomi Web 설정"
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  }
+}

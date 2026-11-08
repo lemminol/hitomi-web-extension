@@ -1,0 +1,18 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>Hitomi Web 확장 설정</title>
+<style>
+body{font:14px/1.5 system-ui,"Malgun Gothic",sans-serif;color:#192539;background:#f4f7fc;margin:0;padding:24px}
+main{max-width:460px;margin:0 auto;background:#fff;border:1px solid #d6e2f0;border-radius:16px;padding:20px}
+h1{font-size:18px;margin:0 0 4px}p{color:#59677b;margin:0 0 16px;font-size:13px}
+label{display:block;font-weight:600;margin:12px 0 4px}input[type=text],input[type=password]{width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid #c9d6e6;border-radius:10px;font:inherit}
+.check{display:flex;gap:8px;align-items:flex-start;margin-top:14px;font-weight:400}.check span{font-size:13px;color:#59677b}
+.row{display:flex;gap:8px;margin-top:18px}button{flex:1;padding:10px;border-radius:12px;border:1px solid #087cf0;background:#fff;color:#087cf0;font:inherit;font-weight:600;cursor:pointer}
+button.primary{background:#087cf0;color:#fff}#status{margin-top:12px;font-size:13px;min-height:1.5em}
+</style></head><body><main>
+<h1>Hitomi Web 확장</h1><p>우클릭 메뉴로 보낸 주소가 이 서버에 등록됩니다.</p>
+<label for="server">서버 주소</label><input id="server" type="text" placeholder="https://hitomi.example.com" autocomplete="off">
+<label for="user">아이디</label><input id="user" type="text" autocomplete="username">
+<label for="password">비밀번호</label><input id="password" type="password" autocomplete="current-password">
+<label class="check"><input id="syncCookies" type="checkbox" checked><span>X · YouTube · 네이버 주소를 등록할 때 이 브라우저의 로그인 쿠키를 서버에 올립니다. 로그인해야 받히는 영상이 바로 받힙니다.</span></label>
+<div class="row"><button id="test" class="primary">연결 확인 후 저장</button><button id="clear">지우기</button></div>
+<div id="status" role="status"></div>
+</main><script src="options.js"></script></body></html>
