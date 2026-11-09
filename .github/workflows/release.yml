@@ -55,7 +55,7 @@ jobs:
             --api-key "$AMO_JWT_ISSUER" --api-secret "$AMO_JWT_SECRET" --no-config-discovery
           xpi=$(ls signed/*.xpi | head -1); cp "$xpi" out/hitomi-web-firefox.xpi
           sha=$(sha256sum out/hitomi-web-firefox.xpi | cut -d' ' -f1)
-          printf '{"addons":{"hitomi-web@lemminol.xyz":{"updates":[{"version":"%s","update_link":"https://github.com/%s/releases/download/v%s/hitomi-web-firefox.xpi","update_hash":"sha256:%s","applications":{"gecko":{"strict_min_version":"128.0"}}}]}}}\n' \
+          printf '{"addons":{"hitomi-web@lemminol.xyz":{"updates":[{"version":"%s","update_link":"https://github.com/%s/releases/download/v%s/hitomi-web-firefox.xpi","update_hash":"sha256:%s","applications":{"gecko":{"strict_min_version":"140.0"}}}]}}}\n' \
             "$VERSION" "$GH_REPO" "$VERSION" "$sha" > out/updates.json
           cat out/updates.json
 

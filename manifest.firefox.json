@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Hitomi Web",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "우클릭 메뉴로 주소를 Hitomi Web 서버에 등록합니다. X·YouTube·네이버는 로그인 쿠키도 함께 올립니다.",
   "icons": {
     "16": "icons/16.png",
@@ -32,7 +32,7 @@
   "browser_specific_settings": {
     "gecko": {
       "id": "hitomi-web@lemminol.xyz",
-      "strict_min_version": "128.0",
+      "strict_min_version": "140.0",
       "data_collection_permissions": {
         "required": [
           "authenticationInfo"
@@ -41,7 +41,7 @@
       "update_url": "https://github.com/lemminol/hitomi-web-extension/releases/latest/download/updates.json"
     },
     "gecko_android": {
-      "strict_min_version": "128.0"
+      "strict_min_version": "142.0"
     }
   }
 }
