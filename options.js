@@ -31,3 +31,11 @@ $('clear').addEventListener('click', async () => {
 });
 
 function show(text, error) { $('status').textContent = text; $('status').style.color = error ? '#b42318' : '#1a7f37'; }
+
+async function showPending() {
+  const { pending = [] } = await chrome.storage.local.get('pending');
+  $('pending').hidden = pending.length === 0; $('pendingCount').textContent = pending.length;
+}
+showPending();
+chrome.storage.onChanged.addListener((changes) => { if (changes.pending) showPending(); });
+$('pendingClear').addEventListener('click', async (e) => { e.preventDefault(); await chrome.storage.local.set({ pending: [] }); });

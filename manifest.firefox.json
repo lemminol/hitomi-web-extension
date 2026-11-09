@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Hitomi Web",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "우클릭 메뉴로 주소를 Hitomi Web 서버에 등록합니다. X·YouTube·네이버는 로그인 쿠키도 함께 올립니다.",
   "icons": {
     "16": "icons/16.png",
@@ -12,7 +12,8 @@
     "contextMenus",
     "storage",
     "cookies",
-    "notifications"
+    "notifications",
+    "alarms"
   ],
   "optional_host_permissions": [
     "*://*/*"
