@@ -12,8 +12,11 @@ button.primary{background:#087cf0;color:#fff}#status{margin-top:12px;font-size:1
 <label for="server">서버 주소</label><input id="server" type="text" placeholder="https://hitomi.example.com" autocomplete="off">
 <label for="user">아이디</label><input id="user" type="text" autocomplete="username">
 <label for="password">비밀번호</label><input id="password" type="password" autocomplete="current-password">
-<label class="check"><input id="syncCookies" type="checkbox" checked><span>X · YouTube · 네이버 주소를 등록할 때 이 브라우저의 로그인 쿠키를 서버에 올립니다. 로그인해야 받히는 영상이 바로 받힙니다.</span></label>
 <div class="row"><button id="test" class="primary">연결 확인 후 저장</button><button id="clear">지우기</button></div>
 <div id="status" role="status"></div>
+<h2 style="font-size:15px;margin:22px 0 4px">쿠키 등록</h2>
+<p>이 브라우저에 로그인된 사이트의 쿠키를 서버에 올립니다. 로그인해야 받히는 영상(보호·연령 제한 계정 등)에 필요하며, 누를 때만 올립니다. 쿠키가 만료되면 다시 누르세요.</p>
+<div class="row"><button id="cookie-x" data-site="x">X 쿠키 등록</button><button id="cookie-youtube" data-site="youtube">YouTube 쿠키 등록</button><button id="cookie-chzzk" data-site="chzzk">네이버 쿠키 등록</button></div>
+<div id="cookieStatus" role="status" style="margin-top:12px;font-size:13px;min-height:1.5em"></div>
 <div id="pending" hidden style="margin-top:14px;font-size:13px;color:#59677b">서버 응답을 기다리는 주소 <b id="pendingCount">0</b>개 · <a href="#" id="pendingClear">지우기</a></div>
 </main><script src="options.js"></script></body></html>
