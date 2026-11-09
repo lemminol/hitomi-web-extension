@@ -17,10 +17,10 @@ chrome.runtime.onInstalled.addListener(() => {
 chrome.action.onClicked.addListener(() => chrome.runtime.openOptionsPage());
 
 chrome.contextMenus.onClicked.addListener(async (info) => {
-  const urls = info.menuItemId === 'link' ? [info.linkUrl] : info.menuItemId === 'page' ? [info.pageUrl]
+  const found = info.menuItemId === 'link' ? [info.linkUrl] : info.menuItemId === 'page' ? [info.pageUrl]
     : (info.selectionText || '').match(/https?:\/\/[^\s<>"'ㄱ-힝]+/g) || [];
+  const urls = [...new Set(found)];
   if (!urls.length) return notify('등록할 주소가 없습니다', '선택한 글에 http:// 또는 https:// 주소가 없습니다.');
-  urls = [...new Set(urls)];
   try { notify(...await register(urls)); }
   catch (e) {
     if (!unreachable(e)) return notify('Hitomi Web 등록 실패', e.message);
