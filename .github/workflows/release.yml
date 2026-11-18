@@ -36,12 +36,15 @@ jobs:
           echo "VERSION=$v" >> "$GITHUB_ENV"
           if gh release view "v$v" >/dev/null 2>&1; then echo "SKIP=1" >> "$GITHUB_ENV"; echo "v$v 릴리스가 이미 있음 · 건너뜀"; fi
 
+      - name: Test
+        run: node --test test/*.test.js
+
       - name: Package
         if: env.SKIP != '1'
         run: |
           set -euo pipefail
           rm -rf build out && mkdir -p build/chromium build/firefox out
-          for f in background.js options.html options.js icons; do cp -r "$f" build/chromium/; cp -r "$f" build/firefox/; done
+          for f in background.js detect.js hlsplan.js options.html options.js popup.html popup.js transfer.html transfer.js icons; do cp -r "$f" build/chromium/; cp -r "$f" build/firefox/; done
           cp manifest.json build/chromium/manifest.json
           cp manifest.firefox.json build/firefox/manifest.json
           (cd build/chromium && zip -qr -X ../../out/HitomiWeb-extension-chromium.zip .)

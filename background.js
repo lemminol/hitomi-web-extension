@@ -10,11 +10,11 @@ const MENUS = { link: '링크 주소 Hitomi Web에 등록', page: '이 페이지
 const RETRYABLE = new Set(['failed', 'partial', 'paused', 'removed']);
 const PENDING_ALARM = 'pending';   // 서버가 응답하지 않아 보관한 주소를 1분마다 다시 보내 본다
 let csrf = '';
+if (typeof importScripts === 'function') importScripts('detect.js');   // Chromium 서비스 워커. Firefox 는 manifest 의 scripts 로 먼저 읽힌다.
 
 chrome.runtime.onInstalled.addListener(() => {
   for (const [id, title] of Object.entries(MENUS)) chrome.contextMenus.create({ id, title, contexts: [id] });
 });
-chrome.action.onClicked.addListener(() => chrome.runtime.openOptionsPage());
 
 chrome.contextMenus.onClicked.addListener(async (info) => {
   const found = info.menuItemId === 'link' ? [info.linkUrl] : info.menuItemId === 'page' ? [info.pageUrl]
@@ -29,7 +29,7 @@ chrome.contextMenus.onClicked.addListener(async (info) => {
   }
 });
 
-chrome.alarms.onAlarm.addListener((alarm) => { if (alarm.name === PENDING_ALARM) flushPending(); });
+chrome.alarms.onAlarm.addListener((alarm) => { if (alarm.name === PENDING_ALARM) flushPending(); if (alarm.name === MEDIA_ALARM) watchMedia(); });
 chrome.runtime.onStartup.addListener(flushPending);
 
 /** 보관 주소를 보낸다. 서버가 여전히 응답하지 않으면 그대로 두고, 거부하면 버린다(영영 남지 않도록). */
@@ -62,8 +62,140 @@ function unreachable(e) {
   return e instanceof TypeError || e?.name === 'TimeoutError' || e?.name === 'AbortError' || [502, 503, 504].includes(e?.status);
 }
 
-// 설정 페이지: '연결 확인'과 '쿠키 등록'
+// ---- 영상 감지 ---------------------------------------------------------------------------------------------------
+// 페이지가 주고받는 응답 가운데 영상(HLS 재생 목록 · mp4 등)을 탭별로 모아 두고, 팝업에서 고른 것을 서버에 보낸다.
+// 서버가 먼저 받고, 서버가 거부당하면(만료 · 접속 위치에 묶인 주소) transfer.html 이 브라우저에서 받아 서버로 올린다.
+const MEDIA_ALARM = 'media';
+const PER_TAB = 30;
+const requestHeaders = new Map();   // requestId → 보낸 헤더 (응답이 올 때까지만)
+let detectSettings = null;
+
+async function detection() {
+  if (!detectSettings) {
+    const s = await chrome.storage.local.get(['detect', 'minKB', 'blocked']);
+    detectSettings = { on: s.detect === true, minBytes: (s.minKB ?? 500) * 1024, blocked: s.blocked || [] };
+  }
+  return detectSettings;
+}
+chrome.storage.onChanged.addListener((changes, area) => { if (area === 'local' && (changes.detect || changes.minKB || changes.blocked)) detectSettings = null; });
+
+const WATCHED = { urls: ['http://*/*', 'https://*/*'], types: ['media', 'xmlhttprequest', 'object', 'other'] };
+// Chromium 은 Cookie 같은 헤더를 extraHeaders 를 줘야 보여 준다. Firefox 는 이 값을 모른다(주면 오류).
+const withExtra = (list) => (chrome.webRequest.OnBeforeSendHeadersOptions?.EXTRA_HEADERS ? [...list, 'extraHeaders'] : list);
+
+chrome.webRequest.onBeforeSendHeaders.addListener((d) => {
+  if (d.tabId < 0) return;
+  requestHeaders.set(d.requestId, d.requestHeaders);
+  if (requestHeaders.size > 2000) requestHeaders.delete(requestHeaders.keys().next().value);
+}, WATCHED, withExtra(['requestHeaders']));
+chrome.webRequest.onErrorOccurred.addListener((d) => requestHeaders.delete(d.requestId), WATCHED);
+chrome.webRequest.onCompleted.addListener((d) => requestHeaders.delete(d.requestId), WATCHED);
+
+chrome.webRequest.onResponseStarted.addListener(async (d) => {
+  if (d.tabId < 0) return;
+  const sent = requestHeaders.get(d.requestId);   // 기다리기 전에 꺼낸다: 응답이 끝나면 지워진다
+  const settings = await detection();
+  if (!settings.on) return;
+  const found = classify(d, settings.minBytes);
+  if (!found || hostBlocked(d.url, settings.blocked) || hostBlocked(d.initiator || d.documentUrl || d.originUrl || '', settings.blocked)) return;
+  let tab = null;
+  try { tab = await chrome.tabs.get(d.tabId); } catch { return; }
+  if (hostBlocked(tab.url || '', settings.blocked)) return;
+  await remember(d.tabId, { ...found, url: d.url, headers: keepHeaders(sent), page: tab.url || '', title: tab.title || '', at: Date.now() });
+}, WATCHED, withExtra(['responseHeaders']));
+
+// 탭 목록은 세션 저장소에 둔다: 서비스 워커가 잠들었다 깨어도 남고, 브라우저를 닫으면 사라진다.
+let writing = Promise.resolve();
+function remember(tabId, item) {
+  writing = writing.then(async () => {
+    const key = 'tab:' + tabId;
+    const list = (await chrome.storage.session.get(key))[key] || [];
+    if (list.some((old) => old.url === item.url)) return;
+    list.push(item);
+    await chrome.storage.session.set({ [key]: list.slice(-PER_TAB) });
+    badge(tabId, Math.min(list.length, PER_TAB));
+  }).catch(() => {});
+  return writing;
+}
+function badge(tabId, count) {
+  chrome.action.setBadgeText({ tabId, text: count ? String(count) : '' }).catch(() => {});
+  chrome.action.setBadgeBackgroundColor({ tabId, color: '#087cf0' }).catch(() => {});
+}
+function forgetTab(tabId) { writing = writing.then(() => chrome.storage.session.remove('tab:' + tabId)).catch(() => {}); badge(tabId, 0); }
+// 탭이 다른 페이지로 가거나 닫히면 그 탭의 목록을 비운다.
+chrome.webRequest.onBeforeRequest.addListener((d) => { if (d.tabId >= 0) forgetTab(d.tabId); }, { urls: ['http://*/*', 'https://*/*'], types: ['main_frame'] });
+chrome.tabs.onRemoved.addListener(forgetTab);
+
+/** 감지한 항목 하나를 서버에 등록하고, 끝날 때까지 지켜볼 목록에 넣는다. */
+async function saveMedia(item) {
+  const s = await settings();
+  const { id } = await call(s, '/api/extensions/media', { url: item.url, kind: item.kind, name: item.name, page: item.page, title: item.title, headers: item.headers });
+  const { media = {} } = await chrome.storage.local.get('media');
+  const { Cookie, cookie, ...headers } = item.headers || {};   // 브라우저가 받을 때는 브라우저의 쿠키가 붙으므로 보관하지 않는다
+  media[id] = { url: item.url, kind: item.kind, name: item.name, page: item.page, title: item.title, headers, size: item.size, state: 'server', at: Date.now() };
+  await chrome.storage.local.set({ media });
+  chrome.alarms.create(MEDIA_ALARM, { periodInMinutes: 0.5 });
+  for (const wait of [3000, 8000, 15000]) setTimeout(watchMedia, wait);   // 서버가 바로 거부당하면 알람을 기다리지 않고 넘어간다
+  return id;
+}
+
+/** 지켜보는 작업들의 상태를 묻는다: 끝났으면 알리고, 서버가 못 받으면 전송 탭을 연다. */
+let watching = false;
+async function watchMedia() {
+  if (watching) return;
+  watching = true;
+  try {
+    const { media = {} } = await chrome.storage.local.get('media');
+    let changed = false;
+    for (const [id, entry] of Object.entries(media)) {
+      if (entry.state === 'browser' && Date.now() - entry.at < 6 * 3600e3) continue;   // 전송 탭이 맡고 있다
+      let state;
+      try { state = await status(await settings(), id); }
+      catch (e) { if (e?.status === 404 || Date.now() - entry.at > 24 * 3600e3) { delete media[id]; changed = true; } continue; }
+      if (state.status === 'completed') { notify('서버에 저장됨', entry.name || state.name); delete media[id]; changed = true; }
+      else if (state.fallback) {
+        entry.state = 'browser'; entry.at = Date.now(); entry.reason = state.reason; changed = true;
+        chrome.tabs.create({ url: chrome.runtime.getURL('transfer.html?job=' + id), active: false });
+        notify('브라우저에서 받아 올립니다', `${entry.name || state.name} — 서버가 받지 못했습니다. 전송 탭을 닫지 마세요.`);
+      } else if (state.status === 'failed' || state.status === 'paused') { notify('서버 저장 실패', `${entry.name || state.name} — ${state.detail || ''}`.slice(0, 200)); delete media[id]; changed = true; }
+    }
+    if (changed) await chrome.storage.local.set({ media });
+    if (!Object.keys(media).length) chrome.alarms.clear(MEDIA_ALARM);
+  } finally { watching = false; }
+}
+
+async function status(s, id, retry = true) {
+  if (!csrf) await login(s);
+  const r = await fetch(s.server + '/api/extensions/media?id=' + id, { credentials: 'include', signal: AbortSignal.timeout(20000) });
+  if (r.status === 401 && retry) { csrf = ''; return status(s, id, false); }
+  return json(r);
+}
+
+// 설정 페이지: '연결 확인'과 '쿠키 등록' · 팝업: 저장 · 전송 탭: 로그인 토큰
 chrome.runtime.onMessage.addListener((message, _sender, reply) => {
+  if (message?.type === 'save') {
+    (async () => {
+      try { reply({ ok: true, id: await saveMedia(message.item) }); }
+      catch (e) { reply({ ok: false, error: e?.status === 404 ? '서버를 1.30.0 이상으로 업데이트하세요.' : e.message }); }
+    })();
+    return true;
+  }
+  if (message?.type === 'session') {   // 전송 탭이 서버를 직접 부를 때 쓴다 (fresh: 다시 로그인)
+    (async () => {
+      try { const s = await settings(); if (message.fresh || !csrf) { csrf = ''; await login(s); } reply({ ok: true, server: s.server, csrf }); }
+      catch (e) { reply({ ok: false, error: e.message }); }
+    })();
+    return true;
+  }
+  if (message?.type === 'transferred') {   // 전송 탭이 끝냈다(성공이든 실패든): 서버 쪽 결과는 다음 확인에서 알린다
+    (async () => {
+      const { media = {} } = await chrome.storage.local.get('media');
+      if (media[message.id]) { if (message.ok) { media[message.id].state = 'server'; media[message.id].at = Date.now(); } else delete media[message.id]; await chrome.storage.local.set({ media }); }
+      if (message.ok) { chrome.alarms.create(MEDIA_ALARM, { periodInMinutes: 0.5 }); setTimeout(watchMedia, 5000); }
+      reply({ ok: true });
+    })();
+    return true;
+  }
   if (message?.type === 'test') {
     (async () => {
       try { csrf = ''; const body = await login(message.settings); reply({ ok: true, version: body.version || '' }); }

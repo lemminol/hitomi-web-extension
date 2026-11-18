@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Hitomi Web",
-  "version": "1.0.7",
-  "description": "우클릭 메뉴로 주소를 Hitomi Web 서버에 등록합니다. 설정에서 X·YouTube·네이버 로그인 쿠키를 올릴 수 있습니다.",
+  "version": "1.1.0",
+  "description": "우클릭 메뉴의 주소와 페이지에서 감지한 영상을 Hitomi Web 서버에 등록합니다. 설정에서 X·YouTube·네이버 로그인 쿠키를 올릴 수 있습니다.",
   "icons": {
     "16": "icons/16.png",
     "48": "icons/48.png",
@@ -13,18 +13,22 @@
     "storage",
     "cookies",
     "notifications",
-    "alarms"
+    "alarms",
+    "webRequest",
+    "declarativeNetRequestWithHostAccess"
   ],
   "optional_host_permissions": [
     "*://*/*"
   ],
   "background": {
     "scripts": [
+      "detect.js",
       "background.js"
     ]
   },
   "action": {
-    "default_title": "Hitomi Web 설정"
+    "default_title": "Hitomi Web · 감지한 영상",
+    "default_popup": "popup.html"
   },
   "options_ui": {
     "page": "options.html",
@@ -36,7 +40,9 @@
       "strict_min_version": "140.0",
       "data_collection_permissions": {
         "required": [
-          "authenticationInfo"
+          "authenticationInfo",
+          "browsingActivity",
+          "websiteContent"
         ]
       },
       "update_url": "https://github.com/lemminol/hitomi-web-extension/releases/latest/download/updates.json"

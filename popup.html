@@ -1,0 +1,14 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>Hitomi Web</title>
+<style>
+body{font:13px/1.45 system-ui,"Malgun Gothic",sans-serif;color:#192539;background:#f4f7fc;margin:0;width:380px}
+header{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:#fff;border-bottom:1px solid #d6e2f0}
+h1{font-size:14px;margin:0}a{color:#087cf0;text-decoration:none;font-weight:600}
+#list{max-height:420px;overflow:auto;padding:8px}.item{background:#fff;border:1px solid #d6e2f0;border-radius:12px;padding:9px 10px;margin-bottom:8px}
+.name{font-weight:600;overflow-wrap:anywhere}.meta{color:#59677b;font-size:12px;margin:2px 0 7px;overflow-wrap:anywhere}
+.row{display:flex;gap:6px}button{flex:1;padding:6px 4px;border-radius:9px;border:1px solid #087cf0;background:#fff;color:#087cf0;font:inherit;font-weight:600;cursor:pointer}
+button.primary{background:#087cf0;color:#fff}button:disabled{opacity:.55;cursor:default}
+#empty{padding:18px 14px;color:#59677b}.note{font-size:12px;margin-top:6px;min-height:1.2em}.ok{color:#1a7f37}.bad{color:#b42318}
+</style></head><body>
+<header><h1>감지한 영상 <span id="count"></span></h1><a href="#" id="options">설정</a></header>
+<div id="empty" hidden></div><div id="list"></div>
+<script src="popup.js"></script></body></html>

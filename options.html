@@ -8,12 +8,19 @@ label{display:block;font-weight:600;margin:12px 0 4px}input[type=text],input[typ
 .row{display:flex;gap:8px;margin-top:18px}button{flex:1;padding:10px;border-radius:12px;border:1px solid #087cf0;background:#fff;color:#087cf0;font:inherit;font-weight:600;cursor:pointer}
 button.primary{background:#087cf0;color:#fff}#status{margin-top:12px;font-size:13px;min-height:1.5em}
 </style></head><body><main>
-<h1>Hitomi Web 확장</h1><p>우클릭 메뉴로 보낸 주소가 이 서버에 등록됩니다.</p>
+<h1>Hitomi Web 확장</h1><p>우클릭 메뉴로 보낸 주소와 감지한 영상이 이 서버에 등록됩니다.</p>
 <label for="server">서버 주소</label><input id="server" type="text" placeholder="https://hitomi.example.com" autocomplete="off">
 <label for="user">아이디</label><input id="user" type="text" autocomplete="username">
 <label for="password">비밀번호</label><input id="password" type="password" autocomplete="current-password">
 <div class="row"><button id="test" class="primary">연결 확인 후 저장</button><button id="clear">지우기</button></div>
 <div id="status" role="status"></div>
+<h2 style="font-size:15px;margin:22px 0 4px">영상 감지</h2>
+<p>페이지가 불러오는 영상(HLS · mp4 등)을 찾아 툴바 아이콘의 목록에 모읍니다. 고른 영상은 서버가 먼저 받고, 서버가 받지 못하면 이 브라우저가 받아 서버로 올립니다. DRM 영상은 받을 수 없습니다.</p>
+<label class="check"><input id="detect" type="checkbox"><span><b style="color:#192539">영상 감지 사용</b><br>켤 때 브라우저가 "모든 사이트의 데이터 접근" 권한을 묻습니다. 감지와 브라우저 받기에 필요합니다.</span></label>
+<label for="minKB">이보다 작은 파일은 목록에서 제외 (KB · HLS는 제외하지 않음)</label><input id="minKB" type="text" inputmode="numeric" style="max-width:120px">
+<label for="blocked">감지하지 않을 사이트 (한 줄에 하나)</label><textarea id="blocked" rows="3" style="width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid #c9d6e6;border-radius:10px;font:inherit" placeholder="example.com"></textarea>
+<div class="row"><button id="detectSave">감지 설정 저장</button></div>
+<div id="detectStatus" role="status" style="margin-top:12px;font-size:13px;min-height:1.5em"></div>
 <h2 style="font-size:15px;margin:22px 0 4px">쿠키 등록</h2>
 <p>이 브라우저에 로그인된 사이트의 쿠키를 서버에 올립니다. 로그인해야 받히는 영상(보호·연령 제한 계정 등)에 필요하며, 누를 때만 올립니다. 쿠키가 만료되면 다시 누르세요.</p>
 <div class="row"><button id="cookie-x" data-site="x">X 쿠키 등록</button><button id="cookie-youtube" data-site="youtube">YouTube 쿠키 등록</button><button id="cookie-chzzk" data-site="chzzk">네이버 쿠키 등록</button></div>

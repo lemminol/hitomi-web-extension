@@ -32,12 +32,28 @@ async function save() {
 }
 
 $('clear').addEventListener('click', async () => {
-  await chrome.storage.local.clear();
+  await chrome.storage.local.remove(['server', 'user', 'password', 'pending', 'media']);   // 영상 감지 설정은 남긴다
   for (const id of ['server', 'user', 'password']) $(id).value = '';
   show('지웠습니다.');
 });
 
 function show(text, error) { $('status').textContent = text; $('status').style.color = error ? '#b42318' : '#1a7f37'; }
+
+// 영상 감지: 켜는 순간(사용자 클릭 안에서) 모든 사이트 접근 권한을 요청한다. 끄면 권한도 돌려준다.
+chrome.storage.local.get(['detect', 'minKB', 'blocked']).then((s) => {
+  $('detect').checked = s.detect === true; $('minKB').value = s.minKB ?? 500; $('blocked').value = (s.blocked || []).join('\n');
+});
+$('detectSave').addEventListener('click', async () => {
+  const note = (text, bad) => { $('detectStatus').textContent = text; $('detectStatus').style.color = bad ? '#b42318' : '#1a7f37'; };
+  const on = $('detect').checked;
+  if (on && !await chrome.permissions.request({ origins: ['*://*/*'] })) { $('detect').checked = false; return note('모든 사이트 접근 권한을 허용해야 감지할 수 있습니다.', true); }
+  const minKB = Math.max(0, Math.min(1e7, parseInt($('minKB').value, 10) || 0));
+  const blocked = [...new Set($('blocked').value.split(/\s+/).map((h) => h.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '').replace(/^www\./, '')).filter(Boolean))];
+  await chrome.storage.local.set({ detect: on, minKB, blocked });
+  $('minKB').value = minKB; $('blocked').value = blocked.join('\n');
+  note(on ? '영상 감지를 켰습니다. 열려 있던 탭은 새로고침한 뒤부터 감지합니다.' : '영상 감지를 껐습니다.');
+});
+chrome.storage.onChanged.addListener((changes) => { if (changes.blocked) $('blocked').value = (changes.blocked.newValue || []).join('\n'); });
 
 async function showPending() {
   const { pending = [] } = await chrome.storage.local.get('pending');
